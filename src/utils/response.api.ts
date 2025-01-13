@@ -4,14 +4,16 @@ const response = (
     res: Response,
     status: number,
     message: string,
-    error: any = null,
-    content: any = null
+    errors: any = null,
+    contents: any = null,
+    meta: any = null
 ) => {
     res.status(status).json({
         statusCode: status,
         message,
-        ...(error && { error }), 
-        ...(content && { content }),
+        ...(errors && { errors }), 
+        ...(contents && { contents }),
+        ...(meta && { meta }),
     });
 };
 

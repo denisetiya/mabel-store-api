@@ -17,17 +17,17 @@ export const authenticateJWT = async (req: Request, res: Response, next: NextFun
     }
 
     if (authHeader) {
-        const token = authHeader.split(" ")[1];
+        const token = authHeader.split(" ")[1] ||  req.cookies.accessToken;
 
         if (token) {
-            jwt.verify(token, ACCESS_TOKEN_SECRET, async (err) => {
+            jwt.verify(token, ACCESS_TOKEN_SECRET, async (err: any) => {
                 if (err) {
-                    const refreshToken = req.headers["x-refresh-token"] || req.body.refreshToken;
+                    const refreshToken = req.headers["x-refresh-token"] || req.cookies.refreshToken;
                     if (!refreshToken) {
                         return response(res, 401, "Unauthorized", err);
                     }
     
-                    const storedToken = await prisma.user.findFirst({ where: { refreshToken: refreshToken }});
+                    const storedToken = await prisma.token.findUnique({ where: { refreshToken: refreshToken }});
     
                     if (!storedToken) return response(res, 403, "Forbidden");
     
@@ -40,6 +40,22 @@ export const authenticateJWT = async (req: Request, res: Response, next: NextFun
                             ACCESS_TOKEN_SECRET,
                             { expiresIn: "15m" }
                         );
+
+                        const newRefreshToken = jwt.sign(
+                            { id: decodedUser.id, email: decodedUser.email },
+                            REFRESH_TOKEN_SECRET,
+                            { expiresIn: "7d" }
+                        )
+
+                        prisma.token.update({
+                            where: {
+                                id: storedToken.id
+                            },
+                            data: {
+                                refreshToken: newRefreshToken
+                            }
+                        })
+
                         // Mengirim token baru melalui header respons
                         res.setHeader("Authorization", `Bearer ${newAccessToken}`);
                         next();

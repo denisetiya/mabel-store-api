@@ -1,28 +1,143 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "cockroachdb"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
 
 model User {
-  id            String @id 
-  email         String @unique
-  password      String
-  refreshToken  String? 
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  email      String   @unique
+  password   String
+  role       String @default("user")
+  userDetails UserDetails?
+  address    Address?
+  token      Token?    
+  reviews    Review[]
+  carts      CartUser[]
+  orders     Order[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Token {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  refreshToken String   @unique
+  userId       String   @db.ObjectId @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  
+}
+
+model Address {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId     String   @db.ObjectId @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  street     String
+  city       String
+  state      String
+  postalCode String
+  moreInfo   String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 
+model UserDetails {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId     String   @db.ObjectId @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  username   String
+  fullName   String
+  phoneNumber  String?
+  profileImage  String @default("https://res.cloudinary.com/dst7qcigz/image/upload/v1732372933/user/mvntmplanmz49w32hqq7.jpg")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+
+model Product {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  description String
+  price      Float
+  image      String
+  stock      Int
+  category   String
+  sold       Int?
+  rating     Float?
+  discount   Float? @default(0)
+  wishlists   CartUser[]
+  reviews    Review[]
+  orders     Order[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+
+model CartUser {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId     String   @db.ObjectId @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId  String   @db.ObjectId @unique
+  quantity   Int
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+
+model Review {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId     String   @db.ObjectId @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId  String   @db.ObjectId @unique
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  rating     Float
+  comment    String
+  ProductImage      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Order {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId     String   @db.ObjectId @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId  String   @db.ObjectId @unique
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity   Int
+  payment PaymentHistory[]
+  delivery   ProductDelivery?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+
+model PaymentHistory {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  orderId    String   @db.ObjectId @unique
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  paymentMethod  String
+  amount     Float
+  status     String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+
+model ProductDelivery {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  orderId    String   @db.ObjectId @unique
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status     String
+  trackingNumber String
+  history    Json[]
+  estimatedDelivery DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
 
