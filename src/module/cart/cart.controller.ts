@@ -55,3 +55,6 @@ cart.delete("/cart/:id", async (req: Request, res: Response) => {
         });
     }
 });
+
+
+export default cart

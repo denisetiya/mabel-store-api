@@ -66,3 +66,6 @@ review.put("/review/:id", async (req: Request, res: Response) => {
         return response(res, error.status || 400, "Error Updating Review", error.message);
     }
 })
+
+
+export default review
